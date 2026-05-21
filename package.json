@@ -1,0 +1,30 @@
+{
+  "name": "zoneops",
+  "version": "0.0.1",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=20.10.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm -r --parallel --stream run dev",
+    "dev:api": "pnpm --filter @zoneops/api dev",
+    "dev:worker": "pnpm --filter @zoneops/worker dev",
+    "dev:web": "pnpm --filter @zoneops/web dev",
+    "db:up": "docker compose -f infra/docker-compose.yml up -d",
+    "db:down": "docker compose -f infra/docker-compose.yml down",
+    "db:logs": "docker compose -f infra/docker-compose.yml logs -f postgres",
+    "db:migrate": "pnpm --filter @zoneops/db run migrate",
+    "db:reset": "docker compose -f infra/docker-compose.yml down -v && pnpm db:up && sleep 5 && pnpm db:migrate && pnpm seed",
+    "seed": "tsx scripts/seed.ts",
+    "typecheck": "pnpm -r run typecheck",
+    "lint": "pnpm -r run lint",
+    "clean": "pnpm -r exec rm -rf node_modules dist .next .turbo"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0"
+  }
+}

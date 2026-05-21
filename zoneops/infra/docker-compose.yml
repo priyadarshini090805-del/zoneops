@@ -1,0 +1,47 @@
+# Local dev only. No volumes-as-named-volumes so it's easy to nuke with `docker compose down -v`.
+# Postgres image: postgis/postgis is the official PostGIS-on-Postgres image,
+# pinned to PG 16 + PostGIS 3.4. Bump deliberately, not on a whim.
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: zoneops-postgres
+    environment:
+      POSTGRES_USER: zoneops
+      POSTGRES_PASSWORD: zoneops
+      POSTGRES_DB: zoneops
+      # Make Postgres reasonably chatty in dev so we notice slow queries early.
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres-init.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
+      - pgdata:/var/lib/postgresql/data
+    command: >
+      postgres
+      -c log_min_duration_statement=200ms
+      -c shared_preload_libraries=pg_stat_statements
+      -c pg_stat_statements.track=all
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zoneops -d zoneops"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    container_name: zoneops-redis
+    ports:
+      - "6379:6379"
+    # Streams use ~no disk; appendonly is fine for dev to survive restarts.
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
+  redisdata:
